@@ -6,7 +6,7 @@
   import { getAllList } from '@/modules/musicLibrary/store/actions'
   import { scrollPointerEvents } from '@/shared/compositions/scrollPointerEvents.svelte'
   import { verticalScrollbar } from '@/shared/compositions/verticalScrollbar.svelte'
-  import { defaultLists, useUserList } from '@/modules/musicLibrary/reactive.svelte'
+  import { defaultLists, useUserList, allUserLists } from '@/modules/musicLibrary/reactive.svelte'
   import type { ComponentExports } from 'svelte'
   import { sortable } from '@/shared/compositions/sortable.svelte'
   import { updateUserListPosition } from './action'
@@ -70,6 +70,10 @@
           </li>
         {/each}
       </ul>
+      <!-- 临时调试：列出所有用户列表及其 parentId，确认后删除 -->
+      <pre class="debug">全部用户列表 ({$allUserLists.length})
+{#each $allUserLists as l (l.id)}{l.name} | id={l.id} | parent={String(l.parentId)}
+{/each}</pre>
     </div>
   {:catch error}
     <div class="list-container tip">Load failed: {error.message}</div>
@@ -97,6 +101,14 @@
   .list-item {
     padding: 0 6px;
     -webkit-user-drag: revert-layer;
+  }
+  .debug {
+    margin: 8px 6px;
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-all;
+    user-select: text;
   }
   .tip {
     align-items: center;
