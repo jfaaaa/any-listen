@@ -1,0 +1,23 @@
+name: my-build
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm build
+      - name: List installers
+        shell: bash
+        run: find . -name "*.exe" -not -path "*/node_modules/*"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: any-listen-win
+          path: |
+            **/*.exe
+            !**/node_modules/**
