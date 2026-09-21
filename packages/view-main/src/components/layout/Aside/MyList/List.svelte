@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ListItem from './ListItem.svelte'
+  import ListBranch from './ListBranch.svelte'
   import Menu from './Menu.svelte'
   import { useListItemHeight } from '@/modules/app/reactive.svelte'
   import type { Position } from '@/components/base/Menu.svelte'
@@ -10,16 +10,18 @@
   import type { ComponentExports } from 'svelte'
   import { sortable } from '@/shared/compositions/sortable.svelte'
   import { updateUserListPosition } from './action'
-  // console.log(params)
+
   const listItemHeight = useListItemHeight(3.2)
   const picStyle = $derived(`height:${listItemHeight.val * 0.64}px; width:${listItemHeight.val * 0.64}px;`)
-  // const picStyle = $derived(`height:${listItemHeight.val * 0.5}px;`)
 
   let menu: ComponentExports<typeof Menu>
 
+  // 只取顶层（parentId = null）；子列表由 ListBranch 按 parentId 递归取
   const userLists = useUserList(null)
   const lists = $derived([...$defaultLists, ...userLists.val])
-  let activeIndex = $state(-1)
+
+  // 原来用 activeIndex，子列表没有全局下标，改用 id 标记当前右键项
+  let activeId = $state<string | null>(null)
 
   const showMenu = (item: AnyListen.List.MyListInfo | null, position: Position) => {
     menu.show(item, position)
@@ -39,7 +41,7 @@
       oncontextmenu={(event) => {
         event.preventDefault()
         event.stopPropagation()
-        activeIndex = -1
+        activeId = null
         showMenu(null, { x: event.pageX, y: event.pageY })
       }}
     >
@@ -55,16 +57,14 @@
       >
         {#each lists as item, index (item.id)}
           <li class="list-item draggable-item" class:default-list={item.type == 'default'} data-id={item.id}>
-            <ListItem
+            <ListBranch
               listInfo={item}
-              active={activeIndex == index}
               {index}
+              {activeId}
               {picStyle}
-              oncontextmenu={(event) => {
-                event.preventDefault()
-                event.stopPropagation()
-                activeIndex = index
-                showMenu(item, { x: event.pageX, y: event.pageY })
+              onmenu={(target, event) => {
+                activeId = target.id
+                showMenu(target, { x: event.pageX, y: event.pageY })
               }}
             />
           </li>
@@ -75,10 +75,11 @@
     <div class="list-container tip">Load failed: {error.message}</div>
   {/await}
 </div>
+
 <Menu
   bind:this={menu}
   onhide={() => {
-    activeIndex = -1
+    activeId = null
   }}
 />
 
@@ -90,7 +91,6 @@
   .list-container {
     position: relative;
     display: block;
-    // outline: none;
     height: 100%;
     contain: strict;
   }
